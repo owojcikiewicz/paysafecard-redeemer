@@ -1,0 +1,19 @@
+{
+  "name": "paysafecard-redeemer",
+  "version": "1.0.0",
+  "description": "Programmatically redeem PaySafeCard codes.",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SaturdaysHeroes/paysafecard-redeemer.git"
+  },
+  "author": "SaturdaysHeroes",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SaturdaysHeroes/paysafecard-redeemer/issues"
+  },
+  "homepage": "https://github.com/SaturdaysHeroes/paysafecard-redeemer#readme"
+}
