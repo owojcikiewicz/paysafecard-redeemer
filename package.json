@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/SaturdaysHeroes/paysafecard-redeemer#readme",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "puppeteer": "^5.5.0"
   }
 }
