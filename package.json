@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/SaturdaysHeroes/paysafecard-redeemer/issues"
   },
-  "homepage": "https://github.com/SaturdaysHeroes/paysafecard-redeemer#readme"
+  "homepage": "https://github.com/SaturdaysHeroes/paysafecard-redeemer#readme",
+  "dependencies": {
+    "puppeteer": "^5.5.0"
+  }
 }
