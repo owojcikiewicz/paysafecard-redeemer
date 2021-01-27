@@ -45,20 +45,16 @@ class PSC {
 
             await usernameField.type(this.credentials.username);
             await passwordField.type(this.credentials.password);
+            await loginButton.click();
         };
     };
 
-    static async init(credentials: Credentials) {
-        let browser = await puppeteer.launch();
+    static async init(credentials: Credentials, options?: {}) {
+        let browser = await puppeteer.launch(options ? options : {headless: false});
         let page = await browser.pages().then(pages => pages[0]);
 
         return new this(browser, credentials, page);
     };
 };
-
-(async() => {
-    let client = await PSC.init({username: process.env.PSC_USERNAME, password: process.env.PSC_PASSWORD});
-    await client.login();
-})();
 
 export {PSC};
