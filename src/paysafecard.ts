@@ -10,15 +10,25 @@ class PSC {
     browser: puppeteer.browser;
     page: puppeteer.page;
     credentials: Credentials;
+    logged: boolean;
 
     get LOGIN_PAGE() {
         return "https://my.paysafecard.com";
+    };
+
+    set LOGGED_IN(status: boolean) {
+        this.logged = status
+    };
+
+    get LOGGED_IN() {
+        return this.logged;
     };
 
     constructor(browser: puppeteer.browser, credentials: Credentials, page: puppeteer.page) {
         this.browser = browser;
         this.credentials = credentials;
         this.page = page;
+        this.logged = false;
 
         console.log("[PSC] Successfully initialized client.");
     };
@@ -63,6 +73,25 @@ class PSC {
         };
     };
 
+    async redeemCode(code: string): Promise<any>{
+        return new Promise(async (reject, resolve) => {
+            if (this.LOGGED_IN == false) {
+                reject("PSC Client not logged in.");
+            };
+
+            if (code.length != 16) {
+                reject("Invalid code.");
+            };
+
+            let page = await this.getPage();
+            let topupField = await page.waitForSelector("#popup:pin");
+            let topupButton = await page.waitForSelector("#topup:login");
+
+            await topupField.type(code);
+            await topupButton.click();
+        });
+    };
+
     async login() {
         let url = this.LOGIN_PAGE;
         let page = await this.getPage();
@@ -75,10 +104,14 @@ class PSC {
             let passwordField = await page.waitForSelector("#password");
             let loginButton = await page.waitForSelector("#loginButton");
 
-            await usernameField.type("");
+            await usernameField.click({clickCount: 3});
+            await usernameField.press("Backspace");
             await usernameField.type(this.credentials.username);
             await passwordField.type(this.credentials.password);
             await loginButton.click();
+
+            await page.waitForTimeout(1000);
+            this.LOGGED_IN = true;
         };
     };
 
