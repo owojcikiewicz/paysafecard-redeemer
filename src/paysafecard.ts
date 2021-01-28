@@ -12,7 +12,7 @@ class PSC {
     credentials: Credentials;
 
     get LOGIN_PAGE() {
-        return "https://login.paysafecard.com/customer-auth/?client_id=mypinsPR&theme=mypins&locale=pl_PL&redirect_uri=https%3A%2F%2Fmy.paysafecard.com%2Fmypins-psc%2FtokenExchange.xhtml";
+        return "https://my.paysafecard.com";
     };
 
     constructor(browser: puppeteer.browser, credentials: Credentials, page: puppeteer.page) {
@@ -33,7 +33,7 @@ class PSC {
     };
     
     static async manualLogin(browser: puppeteer.browser, credentials: Credentials): Promise<void> {
-        let url = "https://login.paysafecard.com/customer-auth/?client_id=mypinsPR&theme=mypins&locale=pl_PL&redirect_uri=https%3A%2F%2Fmy.paysafecard.com%2Fmypins-psc%2FtokenExchange.xhtml";
+        let url = "https://my.paysafecard.com";
         let page = await browser.pages().then(pages => pages[0]);
 
         await page.goto(url);
@@ -57,9 +57,7 @@ class PSC {
             await page.waitForTimeout(15000);
             await confirmButton.click();
 
-            let cookies = await page.cookies();
-            await fs.writeFile("./cookies.json", JSON.stringify(cookies, null, 2));
-
+            await fs.writeFile("./status.txt", "1")
             await browser.close();
         };
     };
@@ -83,19 +81,17 @@ class PSC {
     };
 
     static async init(credentials: Credentials, options?: {}) {
-        let browser = await puppeteer.launch(options ? options : {headless: false});
+        let browser = await puppeteer.launch(options ? options : {headless: true, userDataDir: "./user_data"});
         let page = await browser.pages().then(pages => pages[0]);
 
-        if (browser) { // await fs.readFile("./cookies.json")
-            let cookieString = await (await fs.readFile("./cookies.json")).toString();
-            let cookies = await JSON.parse(cookieString);
-            await page.setCookie(...cookies);
-        } else {
+        try {
+            await fs.readFile("./status.txt");
+            console.log("[PSC] User data detected, proceeding.");
+            return new this(browser, credentials, page);
+        } catch(ex) {
             console.log("[PSC] Cookies not detected, attempting manual login.");
             await this.manualLogin(browser, credentials);
         };
-
-        return new this(browser, credentials, page);
     };
 };
 
