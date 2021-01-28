@@ -1,4 +1,7 @@
-import puppeteer from "puppeteer";
+import Puppeteer from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import randomUseragent from "random-useragent";
 import {promises as fs} from "fs";
 
 interface Credentials {
@@ -7,13 +10,17 @@ interface Credentials {
 };
 
 class PSC {
-    browser: puppeteer.browser;
-    page: puppeteer.page;
+    browser: Puppeteer.Browser;
+    page: Puppeteer.Page;
     credentials: Credentials;
     logged: boolean;
 
     get LOGIN_PAGE() {
         return "https://my.paysafecard.com";
+    };
+
+    get BALANCE_PAGE() {
+        return "https://www.paysafecard.com/pl-pl/sprawdz-dostepne-srodki/";
     };
 
     set LOGGED_IN(status: boolean) {
@@ -24,7 +31,7 @@ class PSC {
         return this.logged;
     };
 
-    constructor(browser: puppeteer.browser, credentials: Credentials, page: puppeteer.page) {
+    constructor(browser: Puppeteer.Browser, credentials: Credentials, page: Puppeteer.Page) {
         this.browser = browser;
         this.credentials = credentials;
         this.page = page;
@@ -33,7 +40,7 @@ class PSC {
         console.log("[PSC] Successfully initialized client.");
     };
 
-    async getPage(): Promise<puppeteer.page> {
+    async getPage(): Promise<Puppeteer.Page> {
         return await this.browser.pages().then(pages => pages[0]);
     };
 
@@ -42,7 +49,7 @@ class PSC {
         await this.browser.close();
     };
     
-    static async manualLogin(browser: puppeteer.browser, credentials: Credentials): Promise<void> {
+    static async manualLogin(browser: Puppeteer.Browser, credentials: Credentials): Promise<void> {
         let url = "https://my.paysafecard.com";
         let page = await browser.pages().then(pages => pages[0]);
 
@@ -54,23 +61,37 @@ class PSC {
             let passwordField = await page.waitForSelector("#password");
             let loginButton = await page.waitForSelector("#loginButton");
 
-            await usernameField.type(credentials.username);
-            await passwordField.type(credentials.password);
-            await loginButton.click();
+            await usernameField.type(credentials.username, {delay: 100});
+            await passwordField.type(credentials.password, {delay: 100});
+            await loginButton.click({delay: 100});
             await page.waitForTimeout(2000);
             
             let smsButton = await page.waitForSelector("#setupFallbackButton");
-            await smsButton.click();
+            await smsButton.click({delay: 100});
             await page.waitForTimeout(2000);
             
             let confirmButton = await page.waitForSelector("#smsConfirmButton");
             await page.waitForTimeout(15000);
-            await confirmButton.click();
+            await confirmButton.click({delay: 100});
 
-            await fs.writeFile("./status.txt", "1")
+            await fs.writeFile("./status.txt", "1");
             await page.goto("https://www.google.com");
             await page.waitForTimeout(1000);
         };
+    };
+
+    async checkCode(code: string): Promise<number> {
+        return new Promise(async (reject, resolve) => {
+            let url = this.BALANCE_PAGE;
+            let page = await this.browser.newPage();
+
+            await page.goto(url);
+
+            let balanceField = await page.waitForSelector("#balancecheck-pin-987203");
+            let balanceButton = await page.waitForSelector("#balancechecksubmit");
+            await balanceField.type(code, {delay: 100});
+            await balanceButton.click({delay: 100});
+        });
     };
 
     async redeemCode(code: string): Promise<any>{
@@ -104,11 +125,11 @@ class PSC {
             let passwordField = await page.waitForSelector("#password");
             let loginButton = await page.waitForSelector("#loginButton");
 
-            await usernameField.click({clickCount: 3});
-            await usernameField.press("Backspace");
-            await usernameField.type(this.credentials.username);
-            await passwordField.type(this.credentials.password);
-            await loginButton.click();
+            await usernameField.click({clickCount: 3, delay: 1000});
+            await usernameField.press("Backspace", {delay: 100});
+            await usernameField.type(this.credentials.username, {delay: 100});
+            await passwordField.type(this.credentials.password, {delay: 100});
+            await loginButton.click({delay: 100});
 
             await page.waitForTimeout(1000);
             this.LOGGED_IN = true;
@@ -116,8 +137,13 @@ class PSC {
     };
 
     static async init(credentials: Credentials, options?: {}) {
-        let browser = await puppeteer.launch(options ? options : {headless: true, userDataDir: "./user_data"});
+        puppeteer.use(StealthPlugin());
+
+        let browser = await puppeteer.launch(options ? options : {headless: false, userDataDir: "./user_data"});
         let page = await browser.pages().then(pages => pages[0]);
+        let ua = await randomUseragent.getRandom();
+
+        await page.setUserAgent(ua);
 
         try {
             await fs.readFile("./status.txt");
