@@ -58,7 +58,8 @@ class PSC {
             await confirmButton.click();
 
             await fs.writeFile("./status.txt", "1")
-            await browser.close();
+            await page.goto("https://www.google.com");
+            await page.waitForTimeout(1000);
         };
     };
 
@@ -74,6 +75,7 @@ class PSC {
             let passwordField = await page.waitForSelector("#password");
             let loginButton = await page.waitForSelector("#loginButton");
 
+            await usernameField.type("");
             await usernameField.type(this.credentials.username);
             await passwordField.type(this.credentials.password);
             await loginButton.click();
