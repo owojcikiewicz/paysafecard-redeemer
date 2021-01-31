@@ -48,6 +48,53 @@ class PSC {
         console.log("[PSC] Closing browser.");
         await this.browser.close();
     };
+
+    async checkCode(code: string): Promise<number> {
+        return new Promise(async (reject, resolve) => {
+            let url = this.BALANCE_PAGE;
+            let page = await this.browser.newPage();
+
+            await page.goto(url);
+
+            let balanceField = await page.waitForSelector("#balancecheck-pin-330780");
+            let balanceButton = await page.waitForSelector("#balancechecksubmit");
+            await balanceField.type(code, {delay: 100});
+            await balanceButton.click({delay: 100});
+
+            await page.on("response", async (response) => {
+                if (response.status() != 200) return;
+
+                try {
+                    let json = await response.json();
+                    if (json[0] != "success") return;
+
+                    console.log(json);
+                } 
+                catch(ex) {
+                    //
+                };
+            });
+        });
+    };
+
+    async redeemCode(code: string): Promise<any>{
+        return new Promise(async (reject, resolve) => {
+            if (this.LOGGED_IN == false) {
+                reject("PSC Client not logged in.");
+            };
+
+            if (code.length != 16) {
+                reject("Invalid code.");
+            };
+
+            let page = await this.getPage();
+            let topupField = await page.waitForSelector("#popup:pin");
+            let topupButton = await page.waitForSelector("#topup:login");
+
+            await topupField.type(code);
+            await topupButton.click();
+        });
+    };
     
     static async manualLogin(browser: Puppeteer.Browser, credentials: Credentials): Promise<void> {
         let url = "https://my.paysafecard.com";
@@ -78,39 +125,6 @@ class PSC {
             await page.goto("https://www.google.com");
             await page.waitForTimeout(1000);
         };
-    };
-
-    async checkCode(code: string): Promise<number> {
-        return new Promise(async (reject, resolve) => {
-            let url = this.BALANCE_PAGE;
-            let page = await this.browser.newPage();
-
-            await page.goto(url);
-
-            let balanceField = await page.waitForSelector("#balancecheck-pin-987203");
-            let balanceButton = await page.waitForSelector("#balancechecksubmit");
-            await balanceField.type(code, {delay: 100});
-            await balanceButton.click({delay: 100});
-        });
-    };
-
-    async redeemCode(code: string): Promise<any>{
-        return new Promise(async (reject, resolve) => {
-            if (this.LOGGED_IN == false) {
-                reject("PSC Client not logged in.");
-            };
-
-            if (code.length != 16) {
-                reject("Invalid code.");
-            };
-
-            let page = await this.getPage();
-            let topupField = await page.waitForSelector("#popup:pin");
-            let topupButton = await page.waitForSelector("#topup:login");
-
-            await topupField.type(code);
-            await topupButton.click();
-        });
     };
 
     async login() {
